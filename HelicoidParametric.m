@@ -1,0 +1,13 @@
+a=5; b=1; d=2;
+u=linspace(0,2*pi,40);
+v=linspace(-d,d,40);
+[u,v]=meshgrid(u,v);
+x=a*v.*cos(u);
+y=a*v.*sin(u);
+z=b*u;
+surf(x,y,z,'EdgeColor', 'none') ;
+box on ;
+xlabel('x');
+ylabel('y');
+zlabel('u(x,y)');
+title({'Helicoid'}) ;

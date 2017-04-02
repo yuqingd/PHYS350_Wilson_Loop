@@ -42,8 +42,8 @@ u0 = @(locations)atan(cos(pi/2*locations.x));
 ut0 = @(locations)5*sin(pi*locations.x).*exp(sin(pi/2*locations.y));
 setInitialConditions(model, u0, ut0);
 
-n = 10;
-tlist = linspace(0,10,n);
+n = 1000;
+tlist = linspace(0,20,n);
 
 generateMesh(model);
 figure;
@@ -65,8 +65,7 @@ for i=1:n,
     axis([-1 1 -1 1 umin umax]);
     caxis([umin umax]);
     M(:,i) = getframe;
-    if mod(n,100) == 0 
-         saveas(fig, ['damped_wave_' num2str(n) '.pdf']);
-    end
+    if n%
+    saveas(fig, ['damped_wave_' num2str(n)]);
 end
 
