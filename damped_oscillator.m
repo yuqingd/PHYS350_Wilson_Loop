@@ -32,9 +32,9 @@ model.SolverOptions.ReportStatistics = 'on';
 result = solvepde(model, tlist);
 u = result.NodalSolution;
 
-results = assembleFEMatrices(model)
+results = assembleFEMatrices(model);
 
-specifyCoefficients(model, 'm', 1, 'd', results.M, 'c', cCoef, 'a', a, 'f', f);
+specifyCoefficients(model, 'm', 1, 'd', 0, 'c', cCoef, 'a', a, 'f', f);
 
 applyBoundaryCondition(model, 'edge', 1:model.Geometry.NumEdges,'u', 0);
 
