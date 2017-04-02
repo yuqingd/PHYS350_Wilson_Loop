@@ -11,6 +11,7 @@ f = 0;
 beta = 0;
 c = 1;
 
+%d = @(region,state) dcoeffunction(region,state);
 cCoef = @(region,state) c^2./sqrt(1+state.ux.^2 + state.uy.^2);
 specifyCoefficients(model, 'm', 1, 'd', 0, 'c', cCoef, 'a', a, 'f', f);
 
@@ -28,7 +29,7 @@ generateMesh(model, 'Hmax', 0.1);
 figure;
 pdemesh(model);
 axis equal  
-
+results = assembleFEMatrices(model)
 model.SolverOptions.ReportStatistics = 'on';
 result = solvepde(model, tlist);
 u = result.NodalSolution;
@@ -47,5 +48,4 @@ for i=1:n,
     caxis([umin umax]);
     M(:,i) = getframe;
 end
-
 
