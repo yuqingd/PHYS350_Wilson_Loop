@@ -1,0 +1,194 @@
+<html lang="en">
+
+<head>
+    <title>WEBGL (Three.js) Catenoid-Helicoid Minimal Surfaces</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            font-family: Monospace;
+            background-color: #ffffff;
+            margin: 0px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Catenoid-Helicoid Associated Family</h1>
+    <center>
+        <div id="container" style="width=device-width"></div>
+    </center>
+    </div>
+    <script src="three.js-master/build/three.min.js"></script>
+    <script src="three.js-master/examples/js/Detector.js"></script>
+    <script src="three.js-master/examples/js/libs/dat.gui.min.js"></script>
+    <script src="three.js-master/examples/js/controls/TrackballControls.js"></script>
+    <script>
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
+        var sin = Math.sin,
+            cos = Math.cos,
+            pi = Math.PI;
+        var container, stats;
+
+        var camera, scene, renderer, controls, materials, shader, mesh;
+        var sfondo, textureSfondo, surface, surfaceGeom, updateSurface;
+        var params = new function() {
+            this.radius = pi / 2;
+            this.alpha = 1;
+        }
+
+        init();
+        animate();
+
+        // GUI controls...
+        var gui = new dat.GUI({
+            autoPlace: true
+        });
+        //container.appendChild(gui.domElement);
+        gui.width = 300;
+        gui.add(params, "radius", 0, pi / 2).onChange(updateSurface);
+        //gui.add(this,"wireframe").name("Show mesh").onChange(updateSurface);
+        //gui.add(this,"facets").name("Show smooth surface").onChange(updateSurface);
+        //gui.add(this,'sfondo').name("Change background");
+
+        function init() {
+            container = document.getElementById('container');
+            var scene_width = window.innerWidth;
+            var scene_height = window.innerHeight;
+
+            scene = new THREE.Scene();
+
+            sfondo = function() { //function to initialise or change skyBox
+                scene.remove(camera);
+                this.scene.remove(mesh);
+                camera = new THREE.PerspectiveCamera(75, scene_width / scene_height, 100, 45000);
+                camera.position.z = -3200;
+                this.scene.add(camera);
+
+                if (renderer != null) {
+                    controls = new THREE.TrackballControls(camera, renderer.domElement);
+                    controls.rotateSpeed = 1.0;
+                    controls.zoomSpeed = 1.2;
+                    controls.panSpeed = 1;
+
+                    controls.noZoom = false;
+                    controls.noPan = false;
+
+                    controls.staticMoving = true;
+                    controls.dynamicDampingFactor = 0.3;
+
+                    controls.keys = [65, 83, 68];
+                    controls.addEventListener('change', render);
+                }
+            };
+
+            surfaceMaterials = function(mat) { //prune materials array according to flags
+                return [mat[0], mat[1]];
+            }
+
+            updateSurface = function() { //function to initialise and update surf.
+                scene.remove(surface);
+                surfaceGeom = new THREE.ParametricGeometry(catenoid, 20, 40);
+                var mat = surfaceMaterials(materials);
+                    surface = THREE.SceneUtils.createMultiMaterialObject(surfaceGeom, mat);
+                    surface.children[0].material.side = THREE.DoubleSide;
+                    surface.position.set(0, 0, 0);
+                    surface.scale.multiplyScalar(1000);
+                    surface.matrixAutoUpdate = true;
+                    scene.add(surface);
+            }
+
+
+            var light, object, materials;
+
+            scene.add(new THREE.AmbientLight(0xffffff));
+            light = new THREE.DirectionalLight(0xffffff);
+            light.position.set(2, 0, 10);
+            scene.add(light);
+
+            //Add skybox
+            sfondo();
+
+            //Create materials for  Surface
+            materials = [
+                new THREE.MeshPhongMaterial({
+                    color: 0x8f5e67,
+                    specular: 0xaa0000,
+                    emissive: 0x000000,
+                    shininess: 10,
+                    shading: THREE.SmoothShading
+                }),
+                //new THREE.MeshPhongMaterial( { color: 0x008888, specular: 0xaaaaaa, emissive: 0x000000, ambient: 0x00aaaa, shininess: 10, shading: THREE.SmoothShading} ),
+                new THREE.MeshBasicMaterial({
+                    color: 0x000000,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.1
+                })
+            ];
+
+            //Surface
+            updateSurface();
+
+            //Renderer, controls
+            renderer = new THREE.WebGLRenderer({
+                antialias: true
+            });
+            renderer.setSize(scene_width, scene_height);
+            renderer.setClearColor('#ffffff', 1);
+            container.appendChild(renderer.domElement);
+            controls = new THREE.TrackballControls(camera, renderer.domElement);
+            controls.rotateSpeed = 1.0;
+            controls.zoomSpeed = 1.2;
+            controls.panSpeed = 1;
+
+            controls.noZoom = false;
+            controls.noPan = false;
+
+            controls.staticMoving = true;
+            controls.dynamicDampingFactor = 0.3;
+
+            controls.keys = [65, 83, 68];
+
+            controls.addEventListener('change', render);
+
+        }
+
+
+
+        function animate() {
+
+            requestAnimationFrame(animate);
+            controls.update();
+            render();
+        }
+
+
+        function render() {
+            camera.lookAt(scene.position);
+            renderer.render(scene, camera);
+        }
+
+        function catenoid(r, t) {
+            var v = (r - .5) * 20;
+            var u = 2 * 5 * pi * t;
+            a = params.radius;
+            x = Math.cos(a) * sinh(v / 5) * Math.sin(u / 5) + Math.sin(a) * cosh(v / 5) * Math.cos(u / 5);
+            y = -Math.cos(a) * sinh(v / 5) * Math.cos(u / 5) + Math.sin(a) * cosh(v / 5) * Math.sin(u / 5);
+            z = u / 5 * Math.cos(a) + v / 5 * Math.sin(a);
+            return new THREE.Vector3(y / 3.3, z / 3.3, x / 3.3);
+        }
+
+        function sinh(t) {
+            return (Math.exp(t) - Math.exp(-t)) / 2.0;
+        }
+
+        function cosh(t) {
+            return (Math.exp(t) + Math.exp(-t)) / 2.0;
+        }
+
+    </script>
+
+</body>
+
+</html>

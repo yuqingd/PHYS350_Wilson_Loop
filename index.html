@@ -1,74 +1,200 @@
-<HTML>
-<HEAD>
-<TITLE>Example of calling MATLAB from VBScript</TITLE>
-</HEAD>
-<BODY>
-<FONT FACE = "Arial, Helvetica, Geneva" SIZE = "+1" COLOR = "maroon">
-Example of calling MATLAB from VBScript
-</FONT>
-<FONT FACE = "Arial, Helvetica, Geneva" SIZE = "-1">
+<html lang="en"><head>
+    <title>A WEBGL (Three.js) Enneper Minimal Surface</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #ffffff;
+				margin: 0px;
+			}
+		</style>
+</head>
+	<body>
+    <h1>Enneper Minimal Surface</h1>
+    <center><div id="container" style="width=device-width"></div></center>
+</div>
+    <script src="three.js-master/build/three.min.js"></script>
+<script src="three.js-master/examples/js/Detector.js"></script>
+<script src="three.js-master/examples/js/libs/dat.gui.min.js"></script>
+<script src="three.js-master/examples/js/controls/TrackballControls.js"></script>
+    <script>
 
-<!-- %%%%%%%%%%%%%%%%%%%% BEGIN SCRIPT %%%%%%%%%%%%%%%%%%%% -->
-<SCRIPT LANGUAGE="VBScript">
-<!-- Invoke MATLAB as a COM Automation server upon loading page
-' Initialize global variables
-Dim MatLab	'COM Automation server variable
-Dim MLcmd	'string to send to MATLAB for execution
-' Invoke COM Automation server
-Set MatLab = CreateObject("Matlab.Application")
-' End initialization script -->	
-</SCRIPT>
+if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+var sin = Math.sin, cos = Math.cos, pi = Math.PI;
+var container, stats;
 
-<!-- %%%%%%%%%%%%%%%%%%%% END SCRIPT %%%%%%%%%%%%%%%%%%%% -->
-<!-- Create form to contain controls -->
-<FORM NAME="Form">
-<!-- Create pulldown menu to select which plot to view -->
-<P>Select type of plot:
-<SELECT NAME=plot_choice>
-	<OPTION SELECTED VALUE=first>Line</OPTION>
-	<OPTION VALUE=second>Peaks</OPTION>
-	<OPTION VALUE=third>Logo</OPTION>
-</SELECT>
-<!-- Create button to create plot and fill text area -->
-<P>Create figure:
-<INPUT TYPE="button" NAME="plot_but" VALUE="Plot">
+var camera, scene, renderer,controls,materials,shader,mesh;
+var message, magnification, wireframe, facets,sfondo, textureSfondo, surface, surfaceGeom,updateSurface;
+var params = new function(){
+  this.radius=3.3;
+	this.exponent=1;
+}
 
-<!-- %%%%%%%%%%%%%%%%%%%% BEGIN SCRIPT %%%%%%%%%%%%%%%%%%%% -->
-<SCRIPT FOR="plot_but" EVENT="onClick" LANGUAGE="VBScript">
-<!-- Start script 
-Dim plot_choice
-Dim text_str  	'string to display in text area
-Dim form_var	'form object variable
-Set form_var = Document.Form
-plot_choice = form_var.plot_choice.value
-' Condition MATLAB command to execute based on plot choice
-If plot_choice = "first"	Then
-   MLcmd = "figure; plot(1:10);" 
-   text_str = "Simple line plot of 1 to 10"
-   Call MatLab.PutCharArray("text","base",text_str)
-Elseif plot_choice = "second" Then
-   MLcmd = "figure; mesh(peaks);" 
-   text_str = "Mesh plot of peaks"
-   Call MatLab.PutCharArray("text","base",text_str)
-Elseif plot_choice = "third" Then
-   MLcmd = "figure; logo;" 
-   text_str = "MATLAB logo"
-   Call MatLab.PutCharArray("text","base",text_str)
-End If
-' Execute command in MATLAB
-MatLab.execute(MLcmd)
-' Get variable from MATLAB into VBScript
-Call MatLab.GetWorkspaceData("text","base","text_str")
-' Update text area	
-form_var.plottext.value = text_str
-' End script -->
-</SCRIPT>
 
-<!-- %%%%%%%%%%%%%%%%%%%% END SCRIPT %%%%%%%%%%%%%%%%%%%% -->
-<!-- Create text area to show text -->
-<P><TEXTAREA NAME="plottext" ROWS="1" COLS="50" 
-CONTENTEDITABLE="false"></TEXTAREA> 
-</FONT>
-</FORM>
-</BODY>
-</HTML>
+init();
+animate();
+
+// GUI controls...
+var gui = new dat.GUI({autoPlace: true});
+//container.appendChild(gui.domElement);
+gui.width=300;
+//gui.add(this,"message").name("");
+gui.add(params,"radius",1,5).name("param. disk radius").onChange(updateSurface);
+gui.add(params,"exponent",1,5,1).step(1).name("k").onChange(updateSurface);
+
+//gui.add(this,"wireframe").name("Show mesh").onChange(updateSurface);
+//gui.add(this,"facets").name("Show smooth surface").onChange(updateSurface);
+//gui.add(this,'sfondo').name("Change background");
+
+function init() {
+    container = document.getElementById( 'container' );
+    var scene_width=window.innerWidth;
+    var scene_height=window.innerHeight;
+
+    scene = new THREE.Scene();
+
+    wireframe=true;
+    facets=true;
+    magnification=1000;
+    message="Enneper Minimal Surface";
+    textureSfondo='clouds/';
+    sfondo=function(){//function to initialise or change skyBox
+	scene.remove(camera);
+
+	this.scene.remove(mesh);
+
+   camera = new THREE.PerspectiveCamera( 75, scene_width / scene_height, 100, 5000 );
+	    camera.position.z = -3200;
+	    this.scene.add( camera );
+
+	if (renderer!=null){
+	    controls=new THREE.TrackballControls(camera, renderer.domElement);
+	    controls.rotateSpeed = 1.0;
+	    controls.zoomSpeed = 1.2;
+	    controls.panSpeed = 1;
+
+	    controls.noZoom = false;
+	    controls.noPan = false;
+
+	    controls.staticMoving = true;
+	    controls.dynamicDampingFactor = 0.3;
+
+	    controls.keys = [ 65, 83, 68 ];
+
+	    controls.addEventListener( 'change', render );
+	}
+    };
+    surfaceMaterials=function(mat){//prune materials array according to flags
+	if(wireframe&&facets){
+	    return [mat[0],mat[1]];
+	} else if (wireframe){
+	    return [mat[1]];
+	} else if (facets){
+	    return [mat[0]];
+	} else {
+	    return [];
+	}
+    }
+    updateSurface=function(){//function to initialise and update Enneper surf.
+	scene.remove(surface);
+	surfaceGeom=new THREE.ParametricGeometry(enneper, Math.floor(10*params.radius/1.5),60+(params.exponent-1)*30 );
+	var mat=surfaceMaterials(materials);
+	if (mat.length>0){
+	    surface = THREE.SceneUtils.createMultiMaterialObject( surfaceGeom, mat );
+	    surface.children[ 0 ].material.side = THREE.DoubleSide;
+	    surface.position.set( 0, 0, 0 );
+	    surface.scale.multiplyScalar(magnification);
+	    surface.matrixAutoUpdate = true;
+	    scene.add( surface);
+	}
+
+    }
+
+
+    var light, object, materials;
+
+    this.scene.add( new THREE.AmbientLight( 0xffffff ) );
+
+    light = new THREE.DirectionalLight( 0xffffff );
+    light.position.set( 2, 0, 10 );
+    this.scene.add( light );
+
+    //Add skybox
+    textureSfondo='milk/';//...so next texture will be 'flat' (default)
+    sfondo();
+
+
+    //Create materials for Enneper Surface
+    materials = [
+	new THREE.MeshPhongMaterial( { color: 0x8f5e67, specular: 0xaa0000, emissive: 0x000000, shininess: 10, shading: THREE.SmoothShading} ),
+	//new THREE.MeshPhongMaterial( { color: 0x008888, specular: 0xaaaaaa, emissive: 0x000000, ambient: 0x00aaaa, shininess: 10, shading: THREE.SmoothShading} ),
+	new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true, transparent: true, opacity: 0.1 } )
+    ];
+
+    //Enneper Surface
+    updateSurface();
+
+    //Renderer, controls
+    renderer = new THREE.WebGLRenderer( { antialias: true} );
+    renderer.setSize( scene_width , scene_height );
+		renderer.setClearColor('#ffffff', 1);
+    container.appendChild( renderer.domElement );
+    controls=new THREE.TrackballControls(camera, renderer.domElement);
+    controls.rotateSpeed = 1.0;
+    controls.zoomSpeed = 1.2;
+    controls.panSpeed = 1;
+
+    controls.noZoom = false;
+    controls.noPan = false;
+
+    controls.staticMoving = true;
+    controls.dynamicDampingFactor = 0.3;
+
+    controls.keys = [ 65, 83, 68 ];
+
+    controls.addEventListener( 'change', render );
+
+}
+
+
+
+function animate() {
+
+    requestAnimationFrame( animate );
+    controls.update();
+    render();
+}
+
+
+function render() {
+    camera.lookAt(scene.position);
+    renderer.render( scene, camera );
+}
+
+function enneper(r, t) {
+    var k=params.exponent;
+    var delta=1;//max radius allowed for each exponent (trials and errors)...
+    switch(k){
+    case 1: delta=3*3.04/5; magnification=1000; break;
+    case 2: delta=2.25*3.4/5; magnification=1400; break;
+    case 3: delta=1.88*3.72/5; magnification=1500; break;
+    case 4: delta=1.7*3.92/5; magnification=1500; break;
+    default: delta=1.56*4.2/5; magnification=1500;
+    }
+    r=r*params.radius/5*delta;
+    t= 2*pi*t;
+    var x, y, z;
+    x=1/2*(r*cos(t)-Math.pow(r,(2*k+1))/(2*k+1)*cos((2*k+1)*t));
+    y=-1/2*(r*sin(t)+Math.pow(r,(2*k+1))/(2*k+1)*sin((2*k+1)*t));
+    z=Math.pow(r,(k+1))/(k+1)*cos((k+1)*t);
+
+    return new THREE.Vector3(y, z, x);
+	}
+
+
+
+
+		</script>
+
+</body></html>
