@@ -1,0 +1,74 @@
+<HTML>
+<HEAD>
+<TITLE>Example of calling MATLAB from VBScript</TITLE>
+</HEAD>
+<BODY>
+<FONT FACE = "Arial, Helvetica, Geneva" SIZE = "+1" COLOR = "maroon">
+Example of calling MATLAB from VBScript
+</FONT>
+<FONT FACE = "Arial, Helvetica, Geneva" SIZE = "-1">
+
+<!-- %%%%%%%%%%%%%%%%%%%% BEGIN SCRIPT %%%%%%%%%%%%%%%%%%%% -->
+<SCRIPT LANGUAGE="VBScript">
+<!-- Invoke MATLAB as a COM Automation server upon loading page
+' Initialize global variables
+Dim MatLab	'COM Automation server variable
+Dim MLcmd	'string to send to MATLAB for execution
+' Invoke COM Automation server
+Set MatLab = CreateObject("Matlab.Application")
+' End initialization script -->	
+</SCRIPT>
+
+<!-- %%%%%%%%%%%%%%%%%%%% END SCRIPT %%%%%%%%%%%%%%%%%%%% -->
+<!-- Create form to contain controls -->
+<FORM NAME="Form">
+<!-- Create pulldown menu to select which plot to view -->
+<P>Select type of plot:
+<SELECT NAME=plot_choice>
+	<OPTION SELECTED VALUE=first>Line</OPTION>
+	<OPTION VALUE=second>Peaks</OPTION>
+	<OPTION VALUE=third>Logo</OPTION>
+</SELECT>
+<!-- Create button to create plot and fill text area -->
+<P>Create figure:
+<INPUT TYPE="button" NAME="plot_but" VALUE="Plot">
+
+<!-- %%%%%%%%%%%%%%%%%%%% BEGIN SCRIPT %%%%%%%%%%%%%%%%%%%% -->
+<SCRIPT FOR="plot_but" EVENT="onClick" LANGUAGE="VBScript">
+<!-- Start script 
+Dim plot_choice
+Dim text_str  	'string to display in text area
+Dim form_var	'form object variable
+Set form_var = Document.Form
+plot_choice = form_var.plot_choice.value
+' Condition MATLAB command to execute based on plot choice
+If plot_choice = "first"	Then
+   MLcmd = "figure; plot(1:10);" 
+   text_str = "Simple line plot of 1 to 10"
+   Call MatLab.PutCharArray("text","base",text_str)
+Elseif plot_choice = "second" Then
+   MLcmd = "figure; mesh(peaks);" 
+   text_str = "Mesh plot of peaks"
+   Call MatLab.PutCharArray("text","base",text_str)
+Elseif plot_choice = "third" Then
+   MLcmd = "figure; logo;" 
+   text_str = "MATLAB logo"
+   Call MatLab.PutCharArray("text","base",text_str)
+End If
+' Execute command in MATLAB
+MatLab.execute(MLcmd)
+' Get variable from MATLAB into VBScript
+Call MatLab.GetWorkspaceData("text","base","text_str")
+' Update text area	
+form_var.plottext.value = text_str
+' End script -->
+</SCRIPT>
+
+<!-- %%%%%%%%%%%%%%%%%%%% END SCRIPT %%%%%%%%%%%%%%%%%%%% -->
+<!-- Create text area to show text -->
+<P><TEXTAREA NAME="plottext" ROWS="1" COLS="50" 
+CONTENTEDITABLE="false"></TEXTAREA> 
+</FONT>
+</FORM>
+</BODY>
+</HTML>
