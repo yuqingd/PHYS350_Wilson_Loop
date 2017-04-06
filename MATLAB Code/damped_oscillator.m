@@ -20,12 +20,12 @@ applyBoundaryCondition(model, 'edge', 1:model.Geometry.NumEdges,'u', 0);
 %ut0 = @(locations)3*sin(pi*locations.x).*exp(sin(pi/2*locations.y));
 setInitialConditions(model, u0, ut0);
 
-n = 100;
-tlist = linspace(0,20,n);
+n = 5;
+tlist = linspace(0,1,n);
 
 generateMesh(model);
 %figure;
-pdemesh(model);
+%pdemesh(model);
 axis equal  
 model.SolverOptions.ReportStatistics = 'on';
 result = solvepde(model, tlist);
@@ -46,12 +46,12 @@ applyBoundaryCondition(model, 'edge', 1:model.Geometry.NumEdges,'u', 0);
 %ut0 = @(locations)5*sin(pi*locations.x).*exp(sin(pi/2*locations.y));
 setInitialConditions(model, u0, ut0);
 
-n = 10;
+n = 30;
 tlist = linspace(0,10,n);
 
 generateMesh(model);
 %figure;
-pdemesh(model);
+%pdemesh(model);
 axis equal  
 model.SolverOptions.ReportStatistics = 'on';
 result = solvepde(model, tlist);
