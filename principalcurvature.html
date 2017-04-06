@@ -1,0 +1,380 @@
+<html lang="en">
+
+<head>
+    <title>WEBGL (Three.js) Principal curvature</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            font-family: Monospace;
+            background-color: #ffffff;
+            margin: 0px;
+        }
+    </style>
+
+</head>
+	<body>
+    <h1>Principal Curvature</h1>
+    <center><div id="container" style="width=device-width"></div></center>
+</div>
+
+<script src="three.js-master/build/three.min.js"></script>
+<script src="three.js-master/examples/js/Detector.js"></script>
+<script src="three.js-master/examples/js/libs/dat.gui.min.js"></script>
+<script src="three.js-master/examples/js/controls/TrackballControls.js"></script>
+<script>
+
+
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
+        var sin = Math.sin,
+            cos = Math.cos,
+            pi = Math.PI,
+            sqrt = Math.sqrt;
+        var container, stats;
+
+        var camera, scene, renderer, controls, materials, shader, mesh;
+        var magnification, theta, show_principal, show_plane, sfondo, surface, surface1, surface2, surface3, surface4, surface5, surface6, surfaceGeom, updateSurface;
+
+        init();
+        animate();
+
+        // GUI controls...
+        var gui = new dat.GUI({
+            autoPlace: true
+        });
+        //container.appendChild(gui.domElement);
+        gui.width = 300;
+        gui.add(this, "theta", 0, pi).name("Plane Angle").onChange(updateSurface);
+        gui.add(this, "show_principal").name("Princ. Curv.").onChange(updateSurface);
+        gui.add(this, "show_plane").name("Normal Plane").onChange(updateSurface);
+
+
+        function init() {
+            container = document.getElementById('container');
+            var scene_width = window.innerWidth;
+            var scene_height = window.innerHeight;
+
+            scene = new THREE.Scene();
+
+
+            theta = pi / 4;
+            show_principal = false;
+            show_plane = false;
+            magnification = 1000;
+            sfondo = function() { //function to initialize or change skyBox
+                this.scene.remove(mesh);
+
+                    camera = new THREE.PerspectiveCamera(75, scene_width / scene_height, 100, 45000);
+                    camera.position.z = -3200;
+                    this.scene.add(camera);
+
+                if (renderer != null) {
+                    controls = new THREE.TrackballControls(camera, renderer.domElement);
+                    controls.rotateSpeed = 1.0;
+                    controls.zoomSpeed = 1.2;
+                    controls.panSpeed = 1;
+
+                    controls.noZoom = false;
+                    controls.noPan = false;
+
+                    controls.staticMoving = true;
+                    controls.dynamicDampingFactor = 0.3;
+
+                    controls.keys = [65, 83, 68];
+
+                    controls.addEventListener('change', render);
+                }
+            };
+            surfaceMaterials = function(mat) { //prune materials array according to flags
+                    return [mat[0], mat[1]];
+            }
+            updateSurface = function() { //function to initialise and update surf.
+                scene.remove(surface);
+                scene.remove(surface1);
+                scene.remove(surface2);
+                scene.remove(surface3);
+                scene.remove(surface4);
+                scene.remove(surface5);
+                scene.remove(surface6);
+                surfaceGeom = new THREE.ParametricGeometry(saddle, 10, 60);
+
+                var mat = surfaceMaterials(materials);
+
+
+                surface = THREE.SceneUtils.createMultiMaterialObject(surfaceGeom, mat);
+                surface.children[0].material.side = THREE.DoubleSide;
+                surface.position.set(0, 0, 0);
+                surface.scale.multiplyScalar(magnification);
+                surface.matrixAutoUpdate = true;
+                scene.add(surface);
+
+                if (show_plane) {
+                    surfaceGeom = new THREE.ParametricGeometry(piano, 5, 40);
+                    surface1 = THREE.SceneUtils.createMultiMaterialObject(surfaceGeom, materials1);
+                    surface1.children[0].material.side = THREE.DoubleSide;
+                    surface1.position.set(0, 0, 0);
+                    surface1.scale.multiplyScalar(magnification);
+                    surface1.matrixAutoUpdate = true;
+                    scene.add(surface1);
+
+
+                    surfaceGeom = new THREE.ParametricGeometry(function(u, v) {
+                        return tube(u, v, theta);
+                    }, 30, 10);
+                    surface2 = THREE.SceneUtils.createMultiMaterialObject(surfaceGeom, materials2);
+                    surface2.children[0].material.side = THREE.DoubleSide;
+                    surface2.position.set(0, 0, 0);
+                    surface2.scale.multiplyScalar(magnification);
+                    surface2.matrixAutoUpdate = true;
+                    scene.add(surface2);
+
+                    surfaceGeom = new THREE.ParametricGeometry(asse, 10, 10);
+                    surface6 = THREE.SceneUtils.createMultiMaterialObject(surfaceGeom, materials5);
+                    surface6.children[0].material.side = THREE.DoubleSide;
+                    surface6.position.set(0, 0, 0);
+                    surface6.scale.multiplyScalar(magnification);
+                    surface6.matrixAutoUpdate = true;
+                    scene.add(surface6);
+                }
+                if (show_principal) {
+                    surfaceGeom = new THREE.ParametricGeometry(function(u, v) {
+                        return tube(u, v, 0);
+                    }, 30, 10);
+                    surface3 = THREE.SceneUtils.createMultiMaterialObject(surfaceGeom, materials3);
+                    surface3.children[0].material.side = THREE.DoubleSide;
+                    surface3.position.set(0, 0, 0);
+                    surface3.scale.multiplyScalar(magnification);
+                    surface3.matrixAutoUpdate = true;
+                    scene.add(surface3);
+
+                    surfaceGeom = new THREE.ParametricGeometry(function(u, v) {
+                        return tube(u, v, pi / 2);
+                    }, 30, 10);
+                    surface4 = THREE.SceneUtils.createMultiMaterialObject(surfaceGeom, materials4);
+                    surface4.children[0].material.side = THREE.DoubleSide;
+                    surface4.position.set(0, 0, 0);
+                    surface4.scale.multiplyScalar(magnification);
+                    surface4.matrixAutoUpdate = true;
+                    scene.add(surface4);
+                }
+            }
+
+
+            var light, object, materials;
+
+            this.scene.add(new THREE.AmbientLight(0xffffff));
+
+            light = new THREE.DirectionalLight(0xffffff);
+            light.position.set(2, 0, 10);
+            this.scene.add(light);
+
+            //Add skybox
+            sfondo();
+
+
+            //Create materials for  Surface
+            materials = [
+                new THREE.MeshPhongMaterial({
+                    color: 0x8f5e67,
+                    specular: 0xaa0000,
+                    emissive: 0x000000,
+                    ambient: 0xae727d,
+                    shininess: 10,
+                    shading: THREE.SmoothShading
+                }),
+                new THREE.MeshBasicMaterial({
+                    color: 0x000000,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.1
+                })
+            ];
+            materials1 = [
+                new THREE.MeshPhongMaterial({
+                    color: 0x00ffff,
+                    specular: 0x00ffff,
+                    emissive: 0x000000,
+                    ambient: 0x00ffff,
+                    shininess: 10,
+                    shading: THREE.SmoothShading,
+                    transparent: true,
+                    opacity: .7
+                }),
+            ];
+            materials1bis = [
+                new THREE.MeshPhongMaterial({
+                    color: 0x00ff88,
+                    specular: 0x00ff88,
+                    emissive: 0x000000,
+                    ambient: 0x00ff88,
+                    shininess: 10,
+                    shading: THREE.SmoothShading,
+                    transparent: true,
+                    opacity: .7
+                }),
+            ];
+            materials2 = [
+                new THREE.MeshPhongMaterial({
+                    color: 0x0000ff,
+                    specular: 0x0000ff,
+                    emissive: 0x000000,
+                    ambient: 0x0000ff,
+                    shininess: 10,
+                    shading: THREE.SmoothShading
+                })
+            ];
+            materials3 = [
+                new THREE.MeshPhongMaterial({
+                    color: 0xff0000,
+                    specular: 0xff0000,
+                    emissive: 0x000000,
+                    ambient: 0xff0000,
+                    shininess: 10,
+                    shading: THREE.SmoothShading
+                })
+            ];
+            materials4 = [
+                new THREE.MeshPhongMaterial({
+                    color: 0x00ff00,
+                    specular: 0x00ff00,
+                    emissive: 0x000000,
+                    ambient: 0x00ff00,
+                    shininess: 10,
+                    shading: THREE.SmoothShading
+                })
+            ];
+            materials5 = [
+                new THREE.MeshPhongMaterial({
+                    color: 0x0f490f,
+                    specular: 0x0f490f,
+                    emissive: 0x000000,
+                    ambient: 0x0f490f,
+                    shininess: 10,
+                    shading: THREE.SmoothShading
+                })
+            ];
+            //Surface
+            updateSurface();
+
+            //Renderer, controls
+            renderer = new THREE.WebGLRenderer({
+                antialias: true
+            });
+            renderer.setSize(scene_width, scene_height);
+            renderer.setClearColor('#ffffff', 1);
+            container.appendChild(renderer.domElement);
+            controls = new THREE.TrackballControls(camera, renderer.domElement);
+            controls.rotateSpeed = 1.0;
+            controls.zoomSpeed = 1.2;
+            controls.panSpeed = 1;
+
+            controls.noZoom = false;
+            controls.noPan = false;
+
+            controls.staticMoving = true;
+            controls.dynamicDampingFactor = 0.3;
+
+            controls.keys = [65, 83, 68];
+
+            controls.addEventListener('change', render);
+
+        }
+
+
+
+        function animate() {
+
+            requestAnimationFrame(animate);
+            controls.update();
+            render();
+        }
+
+
+        function render() {
+            camera.lookAt(scene.position);
+            renderer.render(scene, camera);
+        }
+
+
+        function saddle(r, t) { //hole or not hole?
+            x = r * cos(2 * pi * t);
+            y = r * sin(2 * pi * t);
+            z = x * x - 2 * y * y;
+            return new THREE.Vector3(y, z, x);
+        }
+
+        function piano(r, t) {
+            x = 2 * (r - .5) * cos(theta);
+            y = 2 * (r - .5) * sin(theta);
+            z = 4 * (t - .5);
+            return new THREE.Vector3(y, z, x);
+        }
+
+        function piano_tg(r, t) {
+            x = 2 * (r - .5);
+            y = 2 * (t - .5);
+            z = 0;
+            return new THREE.Vector3(y, z, x);
+        }
+
+        function phi_1(t, alpha) {
+            return t * cos(alpha);
+        }
+
+        function phi_2(t, alpha) {
+            return t * sin(alpha);
+        }
+
+        function phi_3(t, alpha) {
+            return t * t * (1 - 3 * sin(alpha) * sin(alpha));
+        }
+
+        function denom(t, alpha) {
+            return sqrt(1 + 4 * t * t * (1 - 3 * sin(alpha) * sin(alpha)) * (1 - 3 * sin(alpha) * sin(alpha)));
+        }
+
+        function tau_1(t, alpha) {
+            return cos(alpha) / denom(t, alpha);
+        }
+
+        function tau_2(t, alpha) {
+            return sin(alpha) / denom(t, alpha);
+        }
+
+        function tau_3(t, alpha) {
+            return 2 * t * (1 - 3 * sin(alpha) * sin(alpha)) / denom(t, alpha);
+        }
+
+        function b_1(t, alpha) {
+            return cos(alpha) * tau_3(t, alpha);
+        }
+
+        function b_2(t, alpha) {
+            return sin(alpha) * tau_3(t, alpha);
+        }
+
+        function b_3(t, alpha) {
+            return -cos(alpha) * tau_1(t, alpha) - sin(alpha) * tau_2(t, alpha);
+        }
+
+        function tube(u, v, alpha) {
+            var r = .02;
+            var U = (u - .5) * 2;
+            x = phi_1(U, alpha) + r * sin(alpha) * cos(2 * pi * v) + r * b_1(U, alpha) * sin(2 * pi * v);
+            y = phi_2(U, alpha) - r * cos(alpha) * cos(2 * pi * v) + r * b_2(U, alpha) * sin(2 * pi * v);
+            z = phi_3(U, alpha) + r * b_3(U, alpha) * sin(2 * pi * v);
+            return new THREE.Vector3(y, z, x);
+        }
+
+        function asse(u, v) {
+            x = .02 * cos(2 * pi * v);
+            y = .02 * sin(2 * pi * v);
+            z = (u - .5) * 4;
+            return new THREE.Vector3(y, z, x);
+        }
+    </script>
+
+
+</body>
+
+</html>

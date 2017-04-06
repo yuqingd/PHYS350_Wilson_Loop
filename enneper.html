@@ -86,16 +86,12 @@ function init() {
 	}
     };
     surfaceMaterials=function(mat){//prune materials array according to flags
-	if(wireframe&&facets){
-	    return [mat[0],mat[1]];
-	} else if (wireframe){
-	    return [mat[1]];
-	} else if (facets){
+	    //return [mat[0],mat[1]];
+	    //return [mat[1]];
 	    return [mat[0]];
-	} else {
-	    return [];
+      //return [mat[]];
 	}
-    }
+
     updateSurface=function(){//function to initialise and update Enneper surf.
 	scene.remove(surface);
 	surfaceGeom=new THREE.ParametricGeometry(enneper, Math.floor(10*params.radius/1.5),60+(params.exponent-1)*30 );
@@ -120,14 +116,12 @@ function init() {
     light.position.set( 2, 0, 10 );
     this.scene.add( light );
 
-    //Add skybox
-    textureSfondo='milk/';//...so next texture will be 'flat' (default)
     sfondo();
 
 
     //Create materials for Enneper Surface
     materials = [
-	new THREE.MeshPhongMaterial( { color: 0x8f5e67, specular: 0xaa0000, emissive: 0x000000, shininess: 10, shading: THREE.SmoothShading} ),
+	new THREE.MeshPhongMaterial( { color: 0x00ffff, transparent: true, opacity: 0.2, specular: 0xaa0000, emissive: 0x000000, shininess: 10, shading: THREE.SmoothShading} ),
 	//new THREE.MeshPhongMaterial( { color: 0x008888, specular: 0xaaaaaa, emissive: 0x000000, ambient: 0x00aaaa, shininess: 10, shading: THREE.SmoothShading} ),
 	new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true, transparent: true, opacity: 0.1 } )
     ];
